@@ -1,0 +1,86 @@
+一、docker 安装 （使用centos7或者centos8都行）
+	1、检查删除系统之前docker的残留（新系统略过）。
+	yum remove docker \
+                  docker-client \
+                  docker-client-latest \
+                  docker-common \
+                  docker-latest \
+                  docker-latest-logrotate \
+                  docker-logrotate \
+                  docker-engine；	#如果yum报告都没安装过，就行。
+	2、安装docker必要的依赖包
+	yum install -y yum-utils device-mapper-persistent-data lvm2
+	3、添加docker的软件源(阿里云)
+	yum-config-manager --add-repo http://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo
+	#添加完在/etc/yum.repo目录下。
+	4、更新一下yum的缓存，建立元数据
+	yum makecache fast
+	5、下载docker-ce、启动docker
+	yum install -y docker-ce、systemctl start docker
+	6、查看docker版本
+	docker version
+	7、卸载docker
+	yum remove docker-ce
+	rm -rf /var/lib/docker
+	
+二、docker 镜像加速器（就是下载加速器）
+	1、进入/etc/docker目录下，修改或创建daemon.json
+例子{
+		"registry-mirrors": ["https://gxeo3yz7.mirror.aliyuncs.com"]
+	}
+	#课程老师的镜像加速器地址
+	2、 重启生效
+	systemctl daemon-reload
+	systemctl restart docker
+	3、检测加速器是否生效
+	docker info
+	
+ Registry Mirrors:
+  http://gxeo3yz7.mirror.aliyuncs.com/ #最底下显示镜像地址就是生效
+ Live Restore Enabled: false
+
+三、docker镜像命令 			docker镜像：[https://hub.docker.com/]
+	1、docker pull [标签] #标签里填写你所要的版本，默认是latest最新的
+	2、docker images #显示所有镜像
+	3、docker rmi #删除镜像
+四、docker容器命令
+1、docker stop $(docker ps -a -q ) #docker停止所有运行的容器。
+2、docker ps 显示在运行的容器	docker ps -a 显示所有容器
+3、docker cp tomcat-8080:/usr/local/tomcat/webapps/index.html /root 
+4、docker start $(docker ps -a -q) #开启所有容器
+#由于容器的环境比较精简不能编辑，我们可从本机编辑文件复制到容器
+   docker cp /root/index.html tomcat-8080:/usr/local/tomcat/webapps/
+4、docker logs tomcat-8080[容器标签]
+   docker logs -t -n tomcat-8080 #参数 -t 显示时间戳 -n显示最新的容器日志
+	
+案例一、tomcat docker的概念：不可使用镜像，通过镜像创建无数容器
+1、下载tomcat的镜像
+	docker pull tomcat
+	docker images #显示所有镜像
+2、创建tomcat容器
+	docker run -d --name tomcat-8080 -p 8080:8080 tomcat
+	docker run -d --name tomcat-8081 -p 8081:8080 tomcat
+3、进入容器配置服务
+	docker exec -it tomcat-8080 bash
+#为了镜像的简洁性，tomcat删除了非必要的文件
+	进入webapps下
+	mkdir ROOT
+	echo '<h1>8080!!!</h1>'>>index.html #由于最小化没有vi命令，使用打印命令写入文件。
+	echo '<h1>8081!!!</h1>'>>index.html
+4、防火墙放行
+	firewall-cmd --zone=public --add-port=8080/tcp --permanent
+	firewall-cmd --zone=public --add-port=8081/tcp --permanent
+案例二、docker	+	nginx	+	两个tomcat 实现nginx负载均衡
+五、配置docker数据卷
+数据卷：是一个可供一个或多个容器使用的特殊目录。
+	1、docker run -v 本机存放路径:容器内的存放路径 -d --name -p *:* 镜像
+例子：docker run -d -p 8080:8080 --name tomcat-8080 -v /root/docker-vloumn/qfnj:/usr/local/tomcat/webapps/qfnj tomcat
+实例四：docker安装Mysql
+	1、docker run -d --name Mysql-3306 -p 3306-3306 -e MYSQL_ROOT_PASSWORD='MMS12ge**hao' mysql
+													-e 是添加环境变量，给mysql添加密码
+MySQL默认只允许root账户在本地登录，如果要在其他机器上连接mysql，必须修改root允许远程连接，或者添加一个允许远程连接的账户
+	grant all privileges on *.* to 'root'@'%' identified by 'MMS12ge**hao' with grant option;
+	flush privileges;
+防火墙放行3306
+firewall-cmd --zone=public --add-port=3306/tcp --permanent
+firewall-cmd --reload

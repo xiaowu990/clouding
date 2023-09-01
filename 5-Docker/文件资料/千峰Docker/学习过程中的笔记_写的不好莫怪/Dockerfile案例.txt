@@ -1,0 +1,86 @@
+
+dockerfile常用命令
+例子出自于：tomcat:10 dockerfile
+1、FROM-指定基础镜像
+例子：FROM openjdk:17-jdk-bullseye
+2、ENV-指定环境变量信息
+例子：ENV CATALINA_HOME /usr/local/tomcat
+3、WORKDIR-切换工作目录
+例子：WORKDIR $CATALINA_HOME
+4、RUN-执行Linux命令行命令
+例子：RUN set -eux; \
+RUN cd redis-4.0.1 是不可行的 应使用 WORKDIR 来切换目录
+5、EXPOSE-为容器内部打开指定端口与外部相连
+例子：EXPOSE 8080
+6、COPY-把宿主机的文件复制到镜像去（类似的命令ADD）
+7、VOLUME-创建一个可以从本地主机或其他容器的挂载点，一般用来存放数据库和需要保持的数据。
+案例六、配置demo1
+	1、创建存放Dockerfile文件的文件夹
+	mkdir -p /usr/local/docker/demo1/
+	2、编写Dockerfile文件 (注：Dockerfile文件是严格区分大小写的)
+	FROM tomcat #借助tomcat的镜像
+	RUN mkdir -p /usr/local/tomcat/webapps/ROOT/ #创建ROOT目录
+	RUN echo  "Good morning, and in case I don't see you, Good afternoon, Good evening, And good night.">/usr/local/tomcat/webapps/ROOT/index.html
+	#使用 echo 写入创建内容
+	WORKDIR /usr/local/tomcat #跳转到/usr/local/tomcat目录
+	3、构建Dockerfile镜像 -t 指定构建镜像名称
+	docker build -t demo1 .或绝对路径
+	4、创建容器，测试镜像
+	docker run -d --name demo1-8080 -p 8080:8080 demo1
+	5、测试网页
+案例七、配置demo1:2.0
+	1、创建demo2文件夹
+	mkdir -p /usr/local/docker/demo1:2.0/
+	2、编写demo2的Dockerfile文件
+	FROM tomcat
+	WORKDIR /usr/local/tomcat/webapps/ROOT/
+	RUN rm -rf *
+	RUN echo "<h1>Hello world</h1>">/usr/local/tomcat/webapps/ROOT/index.html
+	3、创建镜像
+	docker build -t demo2 /usr/local/docker/demo1:2.0/
+	4、创建容器，测试镜像
+	docker run -d --name demo1-8080 -p 8080:8080 demo1:2.0
+	5、测试
+案例八、配置demo2 （学习COPY命令）
+	1、创建demo2文件夹
+	mkdir -p /usr/local/docker/demo1/
+	2、编写Dockerfile文件
+	FROM tomcat
+	WORKDIR /usr/local/tomcat/webapps
+	RUN mkdir ROOT
+	RUN rm -rf *
+	COPY 1.jpg /usr/local/tomcat/webapps/ROOT/
+	3、创建镜像
+	docker build -t demo2 .
+	4、创建容器，测试镜像
+	5、测试网页/1.jpg
+案例九、
+	1、创建demo3文件夹
+	mkdir -p /usr/local/docker/demo3/
+	2、编写demo3的Dockerfile文件
+	FROM tomcat
+	RUN mkdir -p /usr/local/tomcat/webapps/ROOT
+	WORKDIR /usr/local/tomcat/webapps/ROOT
+	RUN rm -rf *
+	COPY qfnj.zip /usr/local/tomcat/webapps/ROOT/
+	RUN unzip qfnj.zip
+	RUN rm -rf qfnj.zip
+	WORKDIR /usr/local/tomcat
+	3、创建镜像
+	docker build -t demo3 .
+	4、创建容器，测试镜像
+	5、测试网页
+案例十、配置图形化
+	1、搜索一下docker的图形化镜像
+	 docker search portainer
+	 2、挑选合适的镜像，有中文的
+	 docker pull lihaixin/portainer #这不是中文的
+	 3、创建容器
+	 docker run -d -p 9000:9000 --name portainer-9000 portainer
+	 4、测试
+	 ip:9000
+
+	
+
+
+
